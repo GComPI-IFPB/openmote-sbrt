@@ -6,6 +6,7 @@ localEnv = env.Clone()
 
 source = [
     'At86rf215.cpp',
+    'At86rf215_conf.cpp',
 ]
 
 localEnv.Append(
