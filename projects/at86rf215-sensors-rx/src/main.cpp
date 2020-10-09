@@ -30,8 +30,8 @@
 #define GREEN_LED_TASK_PRIORITY             ( tskIDLE_PRIORITY + 0 )
 #define RADIO_TASK_PRIORITY                 ( tskIDLE_PRIORITY + 1 )
 
-#define UART_BAUDRATE						            ( 1267200 )
-#define SPI_BAUDRATE                        ( 16000000 )
+#define UART_BAUDRATE						            ( 115200 )
+#define SPI_BAUDRATE                        ( 8000000 )
 
 #define RADIO_BUFFER_LENGTH                 ( 1024 )
 #define SERIAL_BUFFER_LENGTH                ( 1024 )
@@ -58,8 +58,8 @@ static uint16_t prepare_serial(uint8_t* buffer_ptr, uint8_t* packet_ptr, uint16_
 
 static Serial serial(uart0);
 
-static Task heartbeatTask{(const char *) "Green", 128, GREEN_LED_TASK_PRIORITY, prvGreenLedTask, nullptr};
-static Task radioTask{(const char *) "Radio", 128, RADIO_TASK_PRIORITY, prvRadioTask, nullptr};
+static Task heartbeatTask{(const char *) "Green", 128, (unsigned char)GREEN_LED_TASK_PRIORITY, prvGreenLedTask, nullptr};
+static Task radioTask{(const char *) "Radio", 128, (unsigned char)RADIO_TASK_PRIORITY, prvRadioTask, nullptr};
 
 static PlainCallback radio_rx_init_cb(&radio_rx_init);
 static PlainCallback radio_rx_done_cb(&radio_rx_done);
@@ -73,7 +73,7 @@ static uint16_t radio_buffer_len = sizeof(radio_buffer);
 
 /*================================= public ==================================*/
 
-void main(void)
+int main(void)
 {
   /* Initialize the board */
   board.init();
@@ -83,19 +83,24 @@ void main(void)
   
   /* Enable the UART interface */
   uart0.enable(UART_BAUDRATE);
+  uart0.writeByte(SysCtrlIOClockGet());
   
   /* Initialize Serial interface */
   serial.init();
 
+  /* Initialize the DMA */
+  dma.init();
+
   /* Start the scheduler */
   Scheduler::run();
+  return 0;
 }
 
 /*================================ private ==================================*/
 
 static void prvRadioTask(void *pvParameters)
 {
-	bool status; 
+	bool status;
   
   /* Turn AT86RF215 radio on */
   at86rf215.on();
@@ -116,7 +121,7 @@ static void prvRadioTask(void *pvParameters)
   at86rf215.wakeup(RADIO_CORE);
   at86rf215.configure(RADIO_CORE, RADIO_SETTINGS, RADIO_FREQUENCY, RADIO_CHANNEL);
   at86rf215.setTransmitPower(RADIO_CORE, RADIO_TX_POWER);
-  
+
   /* Forever */
   while (true)
   {
@@ -128,13 +133,14 @@ static void prvRadioTask(void *pvParameters)
     /* Initialize packet pointer and length */
     uint8_t* packet_ptr = radio_buffer;
     uint16_t packet_len = radio_buffer_len;
-    
+
     /* Try to receive a packet */
+
     at86rf215.receive(RADIO_CORE);
-    
+
     /* Wait until packet has been received */
     received = semaphore.take();
-    
+
     /* If we have received a packet */
     if (received == true)
     {

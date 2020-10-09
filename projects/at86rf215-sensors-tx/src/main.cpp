@@ -38,7 +38,7 @@
 #define HEARTBEAT_TASK_STACK_SIZE           ( 128 )
 #define TRANSMIT_TASK_STACK_SIZE            ( 1024 )
 
-#define SPI_BAUDRATE                        ( 16000000 )
+#define SPI_BAUDRATE                        ( 8000000 )
 
 #define TX_BUFFER_LENGTH                    ( 127 )
 #define EUI48_ADDDRESS_LENGTH               ( 6 )
@@ -79,8 +79,8 @@ static void radio_tx_done(void);
 
 /*=============================== variables =================================*/
 
-static Task heartbeatTask{(const char *) "Heartbeat", 128, HEARTBEAT_TASK_PRIORITY, prvHeartbeatTask, nullptr};
-static Task radioTask{(const char *) "Transmit", 128, TRANSMIT_TASK_PRIORITY, prvTransmitTask, nullptr};
+static Task heartbeatTask{(const char *) "Heartbeat", 128, (unsigned char)HEARTBEAT_TASK_PRIORITY, prvHeartbeatTask, nullptr};
+static Task radioTask{(const char *) "Transmit", 128, (unsigned char)TRANSMIT_TASK_PRIORITY, prvTransmitTask, nullptr};
 
 static GpioConfig sensors_pwr_cfg = {SENSORS_CTRL_PORT, SENSORS_CTRL_PIN, 0, 0, 0};
 static GpioOut sensors_pwr_ctrl {sensors_pwr_cfg};
@@ -100,7 +100,7 @@ static bool board_slept;
 
 /*================================= public ==================================*/
 
-void main(void)
+int main(void)
 {
   /* Initialize the board */
   board.init();
@@ -109,13 +109,16 @@ void main(void)
   spi0.enable(SPI_BAUDRATE);
   
   /* Enable the I2C interface */
-  i2c.enable();
+  //i2c.enable();
   
   /* Turn on the sensors board */
-  sensors_pwr_ctrl.high();
+ // sensors_pwr_ctrl.high();
+  //dma.init();
 
   /* Start the scheduler */
   Scheduler::run();
+//  while (1);
+  return 0;
 }
 
 /*================================ private ==================================*/
@@ -123,20 +126,20 @@ void main(void)
 static void prvTransmitTask(void *pvParameters)
 {
   uint16_t packet_counter = 0;
-	bool status; 
-  
+  bool status;
+
   /* Get EUI48 address */
   board.getEUI48(eui48_address);
-  
+
   /* Initialize BME280 and OPT3001 sensors */
-  bme280.init();
-  opt3001.init();
-  opt3001.enable();
-  
+ // bme280.init();
+  //opt3001.init();
+ // opt3001.enable();
+
   /* Set radio callbacks and enable interrupts */
   at86rf215.setTxCallbacks(RADIO_CORE, &radio_tx_init_cb, &radio_tx_done_cb);
   at86rf215.enableInterrupts();
-  
+
   /* Forever */
   while (true)
   {
@@ -144,46 +147,45 @@ static void prvTransmitTask(void *pvParameters)
     Bme280Data bme280_data;
     Opt3001Data opt3001_data;
     uint16_t tx_buffer_len;
-    bool status;
+    bool status = true;
 
     /* Turn on red LED */
     led_red.on();
+    Scheduler::delay_ms(10);
 
     /* Read temperature, humidity and pressure */
-    status = bme280.read(&bme280_data);
-    if (!status)
-    {
+//    status = bme280.read(&bme280_data);
+  //  if (!status)
+    //{
       /* Reset BME280 */
-      bme280.reset();
+      //bme280.reset();
 
       /* Re-initialize BME280 */
-      bme280.init();
-    }
+      //bme280.init();
+   // }
 
     /* Read light */
-    status = opt3001.read(&opt3001_data.raw);
-    if (status)
-    {
-      opt3001.convert(opt3001_data.raw, &opt3001_data.lux);
-    }
-    
-    /* Turn off red LED */
-    led_red.off();
+   // status = opt3001.read(&opt3001_data.raw);
+    //if (status)
+    //{
+     // opt3001.convert(opt3001_data.raw, &opt3001_data.lux);
+   // }
+
 
     /* Convert sensor data */
     if (status)
     {
       bool sent;
-      
+
       /* Fill-in sensor data */
       sensor_data.temperature = (uint16_t) (bme280_data.temperature * 10.0f);
       sensor_data.humidity    = (uint16_t) (bme280_data.humidity * 10.0f);
       sensor_data.pressure    = (uint16_t) (bme280_data.pressure * 10.0f);
       sensor_data.light       = (uint16_t) (opt3001_data.lux * 10.0f);
-      
-      /* Turn AT86RF215 radio off */
+
+      /* Turn AT86RF215 radio on */
       at86rf215.on();
-      
+
       /* Wake up and configure radio */
       at86rf215.wakeup(RADIO_CORE);
       at86rf215.configure(RADIO_CORE, RADIO_SETTINGS, RADIO_FREQUENCY, RADIO_CHANNEL);
@@ -191,16 +193,16 @@ static void prvTransmitTask(void *pvParameters)
 
       /* Prepare radio packet */
       tx_buffer_len = prepare_packet(radio_buffer, eui48_address, packet_counter, sensor_data);
-      
+
       /* Load packet to radio */
       at86rf215.loadPacket(RADIO_CORE, radio_buffer, tx_buffer_len);
-          
+
       /* Transmit packet */
       at86rf215.transmit(RADIO_CORE);
 
       /* Wait until packet has been transmitted */
       sent = semaphore.take();
-      
+
       /* Turn AT86RF215 radio off */
       at86rf215.off();
     }
@@ -208,8 +210,11 @@ static void prvTransmitTask(void *pvParameters)
     /* Increment packet counter */
     packet_counter++;
 
+    /* Turn off red LED */
+    led_red.off();
+
     /* Delay for 10 seconds */
-    Scheduler::delay_ms(10000);
+    Scheduler::delay_ms(1000);
   }
 }
 
@@ -221,7 +226,7 @@ static void prvHeartbeatTask(void *pvParameters)
     /* Turn on green LED for 10 ms */
     led_green.on();
     Scheduler::delay_ms(10);
-    
+
     /* Turn off green LED for 990 ms */
     led_green.off();
     Scheduler::delay_ms(990);

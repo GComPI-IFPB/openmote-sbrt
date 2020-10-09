@@ -1,3 +1,4 @@
+#include "../../../ti/cc2538/src/sys_ctrl.h"
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 

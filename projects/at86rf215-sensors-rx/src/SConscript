@@ -4,7 +4,7 @@ Import('env')
 
 localEnv = env.Clone()
 
-project   = 'freertos-cc2538'
+project   = 'at86rf215-sensors-rx'
 extension = '.elf'
 
 target = project + extension
