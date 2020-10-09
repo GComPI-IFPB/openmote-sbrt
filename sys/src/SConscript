@@ -1,0 +1,23 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+source = [
+    'Buffer.cpp',
+    'CriticalSection.cpp',
+    'Crc16.cpp',
+    'Hdlc.cpp',
+    'LedBlinker.cpp',
+    'Mutex.cpp',
+    'Rendezvous.cpp',
+    'Scheduler.cpp',
+    'Semaphore.cpp',
+    'Serial.cpp',
+    'Task.cpp'
+]
+
+common  = localEnv.Object(source=source)
+
+Return('common')

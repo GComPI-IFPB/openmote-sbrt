@@ -1,0 +1,25 @@
+# SCons
+*.dblite
+bin/
+build/
+
+# IAR
+Debug/
+Release/
+*.ewt
+*.dep
+settings
+
+# Files
+*~
+*.a
+*.o
+*.ko
+*.obj
+*.bin
+*.elf
+*.hex
+*.log
+*.pyc
+*.dblite
+*.txt
