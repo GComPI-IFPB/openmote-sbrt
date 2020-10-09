@@ -2,10 +2,7 @@ import os
 
 cmd_options = {
     'board'     :          ['openmote-b'],
-    'project'   :          ['demo-rx', 'demo-tx', 'freertos-cc2538', 'freertos-cc2538-tickless', 'ieee802154-sniffer',
-                            'test-aes', 'test-board', 'test-crc', 'test-openmote','test-openmote-b', 'test-radio-at86rf215', 
-                            'test-radio-cc2538', 'test-radiotimer', 'test-rendezvous', 'test-serial',
-                            'test-sleeptimer', 'test-spi', 'test-pwm', 'test-task', 'test-timer', 'test-uart'],
+    'project'   :          ['at86rf215-sensors-rx', 'at86rf215-sensors-tx'],
     'compiler'  :          ['gcc'],
     'verbose'   :          ['0','1']
 }
