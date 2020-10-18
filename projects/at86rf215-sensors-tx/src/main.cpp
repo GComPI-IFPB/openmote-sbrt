@@ -65,7 +65,7 @@ extern "C" void board_wakeup(TickType_t xModifiableIdleTime);
 static void prvHeartbeatTask(void *pvParameters);
 static void prvTransmitTask(void *pvParameters);
 
-static uint16_t prepare_packet(uint8_t* packet_ptr, uint8_t* eui48_address, uint32_t packet_counter, SensorData sensor_data);
+static uint16_t prepare_packet(uint8_t* packet_ptr, uint8_t* eui48_address, uint32_t packet_counter);
 
 static void radio_tx_init(void);
 static void radio_tx_done(void);
@@ -118,13 +118,13 @@ static void prvTransmitTask(void *pvParameters)
   /* Forever */
   while (true)
   {
+    uint16_t tx_buffer_len;
     bool status = true;
 
     /* Turn on red LED */
     led_red.on();
     Scheduler::delay_ms(10);
 
-    /* Convert sensor data */
     if (status)
     {
       bool sent;
@@ -138,7 +138,7 @@ static void prvTransmitTask(void *pvParameters)
       at86rf215.setTransmitPower(RADIO_CORE, RADIO_TX_POWER);
 
       /* Prepare radio packet */
-      tx_buffer_len = prepare_packet(radio_buffer, eui48_address, packet_counter, sensor_data);
+      tx_buffer_len = prepare_packet(radio_buffer, eui48_address, packet_counter);
 
       /* Load packet to radio */
       at86rf215.loadPacket(RADIO_CORE, radio_buffer, tx_buffer_len);
@@ -225,7 +225,7 @@ void board_wakeup(TickType_t xModifiableIdleTime)
   }
 }
 
-static uint16_t prepare_packet(uint8_t* packet_ptr, uint8_t* eui48_address, uint32_t packet_counter, SensorData sensor_data)
+static uint16_t prepare_packet(uint8_t* packet_ptr, uint8_t* eui48_address, uint32_t packet_counter)
 {
   uint16_t packet_length = 0;
   uint8_t i;
