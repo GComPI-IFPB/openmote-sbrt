@@ -39,7 +39,7 @@ def program(port = None, baudrate = None):
                     except:
                         print("program: Error unpacking.")
         except:
-            print("program: Wait for OpenMote.")
+            print("program: Waiting for OpenMote connection on port {}.".format(port))
             time.sleep(5)
             
     if (finished):
