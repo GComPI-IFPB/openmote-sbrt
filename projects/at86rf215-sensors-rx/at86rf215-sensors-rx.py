@@ -27,64 +27,39 @@ import random
 import string
 import json
 
-import Serial
-import MqttClient
+import serial as sl
 
-mqtt_address = "34.244.230.156"
-mqtt_port    = 1883
-mqtt_topic   = "test"
 
 finished = False
-
 timeout = 0.1
+
 
 def signal_handler(sig, frame):
     global finished
     finished = True
 
+
 def program(port = None, baudrate = None):
     global finished
 
     # Create and start Serial manager
-    serial = Serial.Serial(name = port, baudrate = baudrate, timeout = timeout)
-    serial.start()
+    with sl.Serial(port=port, baudrate=baudrate, timeout=timeout) as sr:
+        while (not finished): # Repeat until finish condition (ctrl+c)
+            # Try to receive a Serial message
+            message = sr.read(15)
+            if (len(message) > 0):
+                try: 
+                    eui48, counter, rssi = struct.unpack(">6sIb", message[1:12])
+                    print("------------------------------------------")
+                    print("OpenMote Address: {}\nPacket counter: {}\nRSSI: {}".format(eui48, counter, rssi))
+                    print("------------------------------------------")
+                except:
+                    print("program: Error unpacking.")
 
-    # Create MQTT client
-    mqtt = MqttClient.MqttClient(mqtt_address, mqtt_port)
-    mqtt.start()
+        if (finished):
+            # Stop the serial port
+            sr.close()
 
-    print("Starting program at port {} with bauds {}.".format(port, baudrate))
-
-    # Repeat until finish condition
-    while (not finished):
-        # Try to receive a Serial message
-        message, length = serial.receive(timeout = timeout)
-
-        # If we received a message
-        if (length > 0):
-            try:
-                message = bytearray(bytes(message))
-                eui48, counter, t, h, p, l, rssi = struct.unpack('>6sIhhhhb', message)
-                t = t/10.0
-                h = h/10.0
-                p = p/10.0
-                l = l/10.0
-                print("Counter={}, Temperature={}, Humidity={}, Pressure={}, RSSI={}".format(counter, t, h, p, rssi))
-            except:
-                logger.error("program: Error unpacking.")
-
-            try:
-                # Create MQTT message
-                mqtt_message = json.dumps({"address": eui48, "counter": counter, "temp": t, "humidity": h, "pressure": p, "rssi": rssi})
-
-                # Send MQTT message
-                mqtt.send_message(mqtt_topic, mqtt_message)
-            except:
-                logger.error("program: Error sending MQTT packet.")
-            
-    if (finished):
-        # Stop the serial port
-        serial.stop()
 
 def main():
     # Set-up logging back-end
@@ -102,7 +77,8 @@ def main():
     args = parser.parse_args()
 
     # Execute program
-    program(port = args.port, baudrate=args.baudrate)
+    program(port=args.port, baudrate=args.baudrate)
     
+
 if __name__ == "__main__":
     main()
