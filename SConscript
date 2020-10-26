@@ -273,7 +273,7 @@ class OpenMoteCC2538_bootloadThread(threading.Thread):
     
     def run(self):
         print('Starting bootloading on {0}'.format(self.port))
-        command = 'python ' + os.path.join(self.bsl_path, self.bsl_name) + self.bsl_params + '{0} {1}'.format(self.port, self.binary)
+        command = 'python3 ' + os.path.join(self.bsl_path, self.bsl_name) + self.bsl_params + '{0} {1}'.format(self.port, self.binary)
         if (verbose):
             subprocess.Popen(command, shell = True).communicate()
         else:
