@@ -300,16 +300,16 @@ void At86rf215::receive(RadioCore rc)
 bool At86rf215::cca(RadioCore rc, int8_t cca_threshold, int8_t* rssi, bool* rssi_valid)
 {
   uint16_t bbcn_pc_address;
-  uint16_t rfn_edv_address, rfn_edc_address;
+  uint16_t rfn_rssi_address, rfn_edc_address;
   uint16_t irqs_address;
   bool cca_status = false;
   int8_t edv;
   
   /* Set CORE, BBCn and RFn addresses */
-  irqs_address    = At86rf215::getCORERegisterAddress(rc);
-  bbcn_pc_address = At86rf215::getBBCRegisterAddress(rc, BBCn_PC);
-  rfn_edc_address = At86rf215::getRFRegisterAddress(rc, RFn_EDC);  
-  rfn_edv_address = At86rf215::getRFRegisterAddress(rc, RFn_EDV); 
+  irqs_address    = getCORERegisterAddress(rc);
+  bbcn_pc_address = getBBCRegisterAddress(rc, BBCn_PC);
+  rfn_edc_address = getRFRegisterAddress(rc, RFn_EDC);  
+  rfn_rssi_address = getRFRegisterAddress(rc, RFn_RSSI); 
   
   /* Disable BBCn_PC.BBEN bit */
   disableBitFromRegister(bbcn_pc_address, AT86RF215_BBCn_PC_BBEN_MASK);
@@ -337,14 +337,14 @@ bool At86rf215::cca(RadioCore rc, int8_t cca_threshold, int8_t* rssi, bool* rssi
   wakeup(rc);
     
   /* Read EDV address */
-  singleAccessRead(rfn_edv_address, (uint8_t *) &edv);
+  singleAccessRead(rfn_rssi_address, (uint8_t *) &edv);
   
   /* Read EDV address again in case it fails */
   uint8_t read_retries = AT86RF215_EDV_READ_RETRIES;
   do
   {
     /* Read EDV address */
-    singleAccessRead(rfn_edv_address, (uint8_t *) &edv);
+    singleAccessRead(rfn_rssi_address, (uint8_t *) &edv);
     
     /* Decrement number of read retries */
     read_retries--;
