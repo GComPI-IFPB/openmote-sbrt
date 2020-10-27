@@ -303,7 +303,7 @@ bool At86rf215::cca(RadioCore rc, int8_t cca_threshold, int8_t* rssi, bool* rssi
   uint16_t rfn_rssi_address, rfn_edc_address;
   uint16_t irqs_address;
   bool cca_status = false;
-  int8_t edv;
+  int8_t rssi_;
   
   /* Set CORE, BBCn and RFn addresses */
   irqs_address    = getCORERegisterAddress(rc);
@@ -332,34 +332,31 @@ bool At86rf215::cca(RadioCore rc, int8_t cca_threshold, int8_t* rssi, bool* rssi
     /* Check if EDC bit is set */
     status = ((rf_irqs & AT86RF215_RFn_IRQS_EDC_MASK) == AT86RF215_RFn_IRQS_EDC_MASK);
   } while(!status);
-  
-  /* Go back to idle mode */
-  wakeup(rc);
     
   /* Read EDV address */
-  singleAccessRead(rfn_rssi_address, (uint8_t *) &edv);
+  singleAccessRead(rfn_rssi_address, (uint8_t *) &rssi)_;
   
   /* Read EDV address again in case it fails */
   uint8_t read_retries = AT86RF215_EDV_READ_RETRIES;
   do
   {
     /* Read EDV address */
-    singleAccessRead(rfn_rssi_address, (uint8_t *) &edv);
+    singleAccessRead(rfn_rssi_address, (uint8_t *) &rssi_);
     
     /* Decrement number of read retries */
     read_retries--;
     
-  } while ((edv == AT86RF215_EDV_INVALID) && (read_retries > 0));
+  } while ((rssi_ == AT86RF215_EDV_INVALID) && (read_retries > 0));
   
   /* Process measurement only if valid */
-  if (edv != AT86RF215_EDV_INVALID)
+  if (rssi_ != AT86RF215_EDV_INVALID)
   {
     /* Copy CCA result */
-    *rssi = edv;
+    *rssi = rssi_;
     *rssi_valid = true;
     
     /* If read energy is below threshold */
-    if (edv < cca_threshold)
+    if (rssi_ < cca_threshold)
     {
       /* CCA was successful */
       cca_status = true;
@@ -370,9 +367,12 @@ bool At86rf215::cca(RadioCore rc, int8_t cca_threshold, int8_t* rssi, bool* rssi
     *rssi_valid = false;
   }
   
+  /* Go back to idle mode */
+  wakeup(rc);
+
   /* Re-enable BBCn_PC.BBEN bit */
   enableBitFromRegister(bbcn_pc_address, AT86RF215_BBCn_PC_BBEN_MASK);
-  
+
   return cca_status;
 }
 
