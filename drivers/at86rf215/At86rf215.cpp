@@ -334,7 +334,7 @@ bool At86rf215::cca(RadioCore rc, int8_t cca_threshold, int8_t* rssi, bool* rssi
   } while(!status);
     
   /* Read EDV address */
-  singleAccessRead(rfn_rssi_address, (uint8_t *) &rssi)_;
+  singleAccessRead(rfn_rssi_address, (uint8_t *) &rssi_);
   
   /* Read EDV address again in case it fails */
   uint8_t read_retries = AT86RF215_EDV_READ_RETRIES;

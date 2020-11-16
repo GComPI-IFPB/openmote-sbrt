@@ -159,7 +159,7 @@ static void prvTransmitTask(void *pvParameters)
     /* Turn off red LED */
     led_red.off();
 
-    /* Delay for 10 seconds */
+    /* Delay for 1 seconds */
     Scheduler::delay_ms(1000);
   }
 }
